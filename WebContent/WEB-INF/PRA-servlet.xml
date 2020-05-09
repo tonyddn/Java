@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:context="http://www.springframework.org/schema/context"
+   xmlns:tx="http://www.springframework.org/schema/tx"
+   xmlns:aop="http://www.springframework.org/schema/aop"
+   xmlns:mvc="http://www.springframework.org/schema/mvc"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="
+   http://www.springframework.org/schema/beans     
+   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+   http://www.springframework.org/schema/context 
+   http://www.springframework.org/schema/context/spring-context-3.0.xsd
+   http://www.springframework.org/schema/tx
+   http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+   http://www.springframework.org/schema/aop 
+   http://www.springframework.org/schema/aop/spring-aop-4.3.xsd 
+   http://www.springframework.org/schema/mvc
+   http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd ">
+   
+  
+   <context:component-scan base-package="com.pra" />
+   <mvc:annotation-driven/>
+   <mvc:resources location="/WEB-INF/js/" mapping="/js/**"></mvc:resources> 
+  
+   
+    
+   <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+      <property name="prefix" value="/WEB-INF/jsp/" />
+      <property name="suffix" value=".jsp" />
+   </bean>
+
+<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+<property name="url" value="jdbc:mysql://localhost:3306/pra?useUnicode=true&amp;characterEncoding=UTF-8"/>
+<property name="username" value="root" />
+</bean>
+
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+<property name="dataSource" ref="dataSource" />
+<property name="configLocation"  value="classpath:sqlMapConfig.xml"/>
+</bean>
+
+<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg index="0" ref="sqlSessionFactory"></constructor-arg>
+</bean>
+ 
+<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+<!-- 扫描me.gacl.dao这个包以及它的子包下的所有映射接口类 -->
+<property name="basePackage" value="com.pra.dao" />
+<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+</bean>
+    
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">  
+<property name="dataSource" ref="dataSource"></property>  
+</bean> 
+
+<tx:advice id="serviceAdvice" transaction-manager="transactionManager">   
+    <tx:attributes>    
+        <!--当代理的service层中的方法抛出异常的时候才回滚,必须加rollback-for参数-->  
+        <tx:method name="save*" propagation="REQUIRED" />  
+        <tx:method name="del*" propagation="REQUIRED" />   
+        <tx:method name="update*" propagation="REQUIRED" />  
+        <tx:method name="add*" propagation="REQUIRED" />  
+        <!--除了上面标识的方法,其他方法全是只读方法-->
+        <tx:method name="*" read-only="true"/>
+    </tx:attributes>   
+</tx:advice> 
+
+
+<!-- 配置哪些类的方法需要进行事务管理 -->
+<aop:config proxy-target-class="true">   
+<aop:pointcut id="servicePointcut" expression="execution(* com.pra.service.*.*(..))"/>   
+<aop:advisor pointcut-ref="servicePointcut" advice-ref="serviceAdvice"/>   
+</aop:config>  
+
+
+</beans>
+
