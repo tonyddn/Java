@@ -17,7 +17,7 @@ select * from userinformation where username = #{username} and password = #{pass
       INSERT INTO userinformation (id,username,password,realname,sex,age,hobby,email,position,department) 
       VALUES 
      (
-     #{id1},
+     #{id},
      #{username},
      #{password},
      #{realname},
